@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- aircomponents/src/myComponents/DocumentWindow.mxml -->
+<s:Window xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="window1_creationCompleteHandler(event)"
+		  width="100%" height="100%" showStatusBar="false" systemChrome="none"
+		  transparent="false" xmlns:components="views.components.*" backgroundColor="#ffffff">
+	<fx:Script>
+		<![CDATA[
+			import com.greensock.TweenLite;
+			
+			import mx.events.FlexEvent;
+			import mx.events.VideoEvent;
+			
+			import spark.effects.Animate
+			
+			import org.osmf.events.MediaPlayerStateChangeEvent;
+			public var temporizza:Timer;
+			
+			
+			
+			public function showNewPic(source:String):void {
+				temporizza.reset();
+				temporizza.start();
+				
+				//filler.alpha=100;
+				realTimeImg.source=source;
+				gruppo.alpha=0;
+				//realTimeImg.alpha=100;
+			}
+			
+			protected function videoPlayer_completeHandler(e:Event):void
+			{
+				trace("video complete");
+				
+			}
+			
+			protected function videoPlayer_mediaPlayerStateChangeHandler(event:MediaPlayerStateChangeEvent):void
+			{
+				if(event.state=="playing") {
+					videoPlayer.videoObject.smoothing=true;
+				}
+				
+			}
+			
+			protected function videoPlayer_creationCompleteHandler(event:FlexEvent):void
+			{
+				videoPlayer.play();
+				
+			}
+			
+			protected function window1_creationCompleteHandler(event:FlexEvent):void
+			{
+				temporizza = new Timer(10,2000);
+				temporizza.addEventListener(TimerEvent.TIMER,temporizzatore);
+				
+				
+			}
+			protected function temporizzatore(e:TimerEvent) {
+				trace(temporizza.currentCount);
+				if(temporizza.currentCount<200) {
+					if(videoPlayer.volume>0) {
+						videoPlayer.volume-=0.1;
+					}
+					if (gruppo.alpha<=1) {
+						gruppo.alpha+=0.05;
+						gruppo.invalidateDisplayList();
+					}
+					
+				}
+				if(temporizza.currentCount>=200 && temporizza.currentCount<=300) {
+					if(videoPlayer.playing) {
+						videoPlayer.pause();
+					}
+					
+				}
+				if(temporizza.currentCount>=1400 && temporizza.currentCount<=1500) {
+					if(!videoPlayer.playing) {
+						videoPlayer.play();
+					}
+				}
+				if(temporizza.currentCount>=1400) {
+					
+					if(videoPlayer.volume<1) {
+						videoPlayer.volume+=0.1;
+					}
+					if (gruppo.alpha>0) {
+						gruppo.alpha-=0.05;
+						gruppo.invalidateDisplayList();
+					}
+					
+				}
+				if(temporizza.currentCount==1500) {
+					trace("siamo a quindici");
+					
+					gruppo.alpha=0;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<!--s:states>
+	<s:State name="video"  />
+	<s:State name="photo"/>
+	</s:states-->
+	
+	<!--s:transitions>
+	
+	<s:Transition toState="photo" >
+	<s:Parallel>
+	
+	<s:Fade targets="{[realTimeImg]}" duration="1000" alphaFrom="0" alphaTo="1"/>
+	
+	</s:Parallel>
+	
+	</s:Transition>
+	<s:Transition toState="video" >
+	<s:Parallel>
+	
+	<s:Fade targets="{[realTimeImg]}" duration="1000" alphaFrom="1" alphaTo="0"/>
+	</s:Parallel>
+	
+	</s:Transition>
+	
+	</s:transitions-->
+	
+	<s:BorderContainer width="100%" height="100%" borderVisible="false" >
+		
+		<s:VideoDisplay   creationComplete="videoPlayer_creationCompleteHandler(event)" id="videoPlayer" source="/assets/videos/looppolo.f4v" complete="videoPlayer_completeHandler(event)" width="100%" height="100%" autoDisplayFirstFrame="true" autoPlay="true" loop="true" mediaPlayerStateChange="videoPlayer_mediaPlayerStateChangeHandler(event)" />
+		<s:Group width="100%" height="100%" id="gruppo" alpha="0">
+			
+			
+			<s:Rect id="filler" width="100%" height="100%"   >
+				<s:fill>
+					<s:SolidColor color="#ffffff" />
+					
+				</s:fill>
+			</s:Rect>
+			<s:Image id="realTimeImg" width="100%" height="100%" smooth="true" scaleMode="letterbox" />
+		</s:Group>
+	</s:BorderContainer>
+	
+	
+</s:Window>

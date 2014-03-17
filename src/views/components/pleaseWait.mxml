@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="600" height="300" addedToStage="group1_addedToStageHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.alfo.utils.DelayedExecution;
+			
+			
+			[Bindable]
+			public var message:String="";
+			
+			import mx.managers.PopUpManager;
+			protected function group1_addedToStageHandler(event:Event):void
+			{
+				
+				
+			}
+			public function fuckOff(delay:Number=5000) {
+				new DelayedExecution(4000,this,shutTheFuckUp);
+			}
+			private function shutTheFuckUp(e:Event=null) {
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:DropShadowFilter id="shadowfilter" strength=".8" distance="8" />
+	</fx:Declarations> 
+	<s:Rect id="tbFill" left="0" right="0" top="0" bottom="0"  filters="{[shadowfilter]}">
+		<s:fill>
+			<s:SolidColor color="#E28CBB"/>
+
+		</s:fill>
+	</s:Rect>
+	<s:VGroup width="100%" left="4" right="4" top="4" bottom="4" height="100%" horizontalAlign="center" verticalAlign="middle">
+		<s:Label  color="#000000" width="100%" lineBreak="toFit"  fontSize="32" text="{message}"/>
+		<s:Spacer height="5"/>
+		<s:Button label="Close" click="shutTheFuckUp()" />
+	</s:VGroup>
+	
+</s:Group>
