@@ -1,6 +1,203 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
-					   xmlns:mx="library://ns.adobe.com/flex/mx">
+					   xmlns:mx="library://ns.adobe.com/flex/mx" scaleX="1" scaleY="0.9" creationComplete="windowedapplication1_creationCompleteHandler(event)" addedToStage="windowedapplication1_addedToStageHandler(event)" width="800" height="300"
+					   alwaysInFront="true"
+					   >
 	
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.air.filesystem.FileMonitor;
+			import com.adobe.air.filesystem.events.FileMonitorEvent;
+			import com.alfo.utils.DelayedExecution;
+			import com.alfo.utils.PictureWatcher;
+			
+			import mx.events.FlexEvent;
+			
+			import model.Config;
+			
+			import org.osmf.utils.OSMFSettings;
+			
+			import views.CameraWindow;
+			
+			
+			
+			
+			private var prefs:Config;
+			private var photoShopWatch:PictureWatcher;
+			private var oldList:Array=new Array();
+			private var newList:Array=new Array();
+			private var folderFile:File;
+			private var pushFolder:File;
+			private var currentPhoto:String="";
+			private var lastPhoto:String;
+			
+			private var prefsFile:File;
+			
+			private var dirList;
+			
+			private var serverSocket:ServerSocket;
+			private var clientSocket:Socket;
+			
+			private var currentBckg:String="background_1.jpg";
+			
+			private var CMDnativeProcessInfo:NativeProcessStartupInfo;
+			private var CMDprocess:NativeProcess;
+			
+			private var cameraWindow:CameraWindow;
+			
+			private var monitor:FileMonitor=new FileMonitor();
+			
+			private var oldDirContents:Array;
+			private var currentDirContents:Array;
+			private var newFiles:Array;
+			
+			private var file:File;
+			
+			protected function windowedapplication1_addedToStageHandler(event:Event):void
+			{
+				
+				
+				prefs= new Config();
+				folderWatchDir.text=prefs.watchFolder;
+				setFileMonitor(folderWatchDir.text);
+				
+			}
+			
+			protected function setFileMonitor(theFile:String) {
+				
+				file = File.applicationStorageDirectory.resolvePath(theFile);
+				trace("setting monitor to:"+file.nativePath);
+				
+				oldDirContents=file.getDirectoryListing();
+				
+				for (var i=0;i<oldDirContents.length;i++) {
+					var curr:File=oldDirContents[i] as File;
+					oldDirContents[i]=curr.nativePath;
+				}
+				
+				monitor.addEventListener(FileMonitorEvent.CHANGE, onFileChange);
+				monitor.addEventListener(FileMonitorEvent.MOVE, onFileMove);
+				monitor.addEventListener(FileMonitorEvent.CREATE, onFileCreate);
+				
+				
+				monitor.file = file;
+				monitor.watch();
+			}
+			
+			private function onFileChange(e:FileMonitorEvent=null):void
+			{
+				trace("file was changed"+e.file.nativePath);
+				var currentString:String;
+				file = File.applicationStorageDirectory.resolvePath(folderWatchDir.text);
+				currentDirContents=file.getDirectoryListing();
+				for (var i=0;i<currentDirContents.length;i++) {
+					var curr:File=currentDirContents[i] as File;
+					currentDirContents[i]=curr.nativePath;
+				}
+				newFiles=new Array();
+				var i : int;
+				trace("old dire length:"+oldDirContents.length);
+				trace("new dire length:"+currentDirContents.length);
+				for (i = 0; i < currentDirContents.length; i++) {
+					//&& currentDirContents[i].indexOf(".jpg")!=-1
+					if(currentDirContents[i].toLowerCase().indexOf("part")==-1) {
+						if (oldDirContents.indexOf(currentDirContents[i]) == -1 && ((currentDirContents[i].toLowerCase().indexOf(".jpg"))!=-1 || (currentDirContents[i].toLowerCase().indexOf(".mp4"))!=-1)) {
+							trace("found new:"+currentDirContents[i]);
+							newFiles.push(currentDirContents[i]);
+						}
+					}
+				}
+				trace(newFiles);
+				if(newFiles.length>0) {
+					new DelayedExecution(3000,this,procopio);
+				}
+				oldDirContents=currentDirContents.slice();
+			}
+			
+			private function onFileMove(e:FileMonitorEvent):void
+			{
+				trace("file was moved"+e.file.nativePath);    
+			}
+			
+			private function onFileCreate(e:FileMonitorEvent):void
+			{
+				trace("file was created"+e.file.nativePath);
+			}
+			
+			/*private function photoComplete(e:WatchEvent) {
+			writeLog("skyphotos directory evt type"+e.notificationType+" file:"+e.nativepath);
+			new DelayedExecution(3000,this,procopio);
+			}*/
+			private function procopio() {
+				
+				this.stage.nativeWindow.activate();
+				
+				if(String(newFiles[0]).indexOf(".mp4")!=-1) {
+					cameraWindow.showNewVideo(newFiles[0]);
+				} else {
+					cameraWindow.showNewPic(newFiles[0]);
+				}
+				
+				
+				
+				trace("call showNrePic");
+				
+			}
+			
+			protected function selectWatch(e:Event=null) {
+				folderFile=new File();
+				folderFile.addEventListener(Event.SELECT,watch_select);
+				folderFile.browseForDirectory("Please select watch directory ");
+			}
+			
+			private function watch_select(evt:Event):void {
+				folderWatchDir.text=folderFile.nativePath;
+				prefs.watchFolder=folderFile.nativePath;
+				prefs.writeXMLData();
+				
+				setFileMonitor(folderFile.nativePath);
+				
+			}
+			
+			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
+			{
+				OSMFSettings.enableStageVideo=false;
+				trace("Main screen:"+ Screen.mainScreen.visibleBounds.left+" "+Screen.mainScreen.visibleBounds.top);
+				var secondscreen:Number=0;
+				for(var i:Number=0;i<Screen.screens.length;i++) {
+					trace(i+" screen:"+Screen.screens[i].visibleBounds.left+" "+Screen.screens[i].visibleBounds.top);
+					if(Screen.screens[i].visibleBounds.left != Screen.mainScreen.visibleBounds.left) {
+						secondscreen=i;
+					}
+				}
+				trace("secondary screen is:"+secondscreen);
+				cameraWindow=new CameraWindow();
+				cameraWindow.open();
+				cameraWindow.move(Screen.screens[secondscreen].visibleBounds.left,Screen.screens[secondscreen].visibleBounds.top);
+				cameraWindow.width=Screen.screens[secondscreen].visibleBounds.width;
+				cameraWindow.height=Screen.screens[secondscreen].visibleBounds.height;
+				
+			}
+			
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup width="100%" height="100%">
+		
+		
+		<s:HGroup>
+			<s:Label text="Watch folder" width="200" />
+			<s:TextInput width="500" id="folderWatchDir" />
+			<s:Button id="changeFolderBut" label="change" click="selectWatch(event)" />
+		</s:HGroup>
+		
+		
+		
+	</s:VGroup>
 </s:WindowedApplication>

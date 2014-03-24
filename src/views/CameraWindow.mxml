@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- aircomponents/src/myComponents/DocumentWindow.mxml -->
+<s:Window xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  width="100%" height="100%" showStatusBar="false" systemChrome="none" alwaysInFront="true"
+		  transparent="false" xmlns:components="views.components.*" backgroundColor="#ffffff" creationComplete="window1_creationCompleteHandler(event)" >
+	<fx:Script>
+		<![CDATA[
+			import com.alfo.utils.DelayedExecution;
+			import com.greensock.TweenLite;
+			import com.greensock.TweenMax;
+			import com.greensock.plugins.AutoAlphaPlugin;
+			import com.greensock.plugins.TweenPlugin;
+			
+			import flash.utils.getQualifiedClassName;
+			
+			import mx.events.FlexEvent;
+			
+			import org.osmf.events.MediaPlayerStateChangeEvent;
+			import org.osmf.events.TimeEvent;
+			public var temporizza:Timer;
+			
+			private var photoNumber:Number=0;
+			
+			private var customerVideoComplete:Boolean=false;
+			
+			private var faseStatus:String="one";
+			
+			private var currentSource:String;
+			
+			public function showNewPic(source:String):void {
+				if(customerVideoGroup.alpha!=0) {
+					TweenMax.to(customerVideoGroup,1,{volume:0});
+					TweenMax.to(customerVideo,1,{alpha:0});
+				}
+				
+				currentSource=source;
+				//temporizza=new Timer(5000,1);
+				//temporizza.addEventListener(TimerEvent.TIMER_COMPLETE,promoVideo);
+				
+				photoNumber++;
+				if(photoNumber % 2 == 0) {
+					//image1.alpha=1;
+					//image2.alpha=0;
+					image1.visible=true;
+					image2.visible=true;
+					this.invalidateDisplayList();
+					image1.addEventListener(Event.COMPLETE,image1_completeHandler);
+					image1.source=source;
+					trace("filling image 1:"+image1.source);
+				} else {
+					image1.visible=true;
+					image2.visible=true;
+					this.invalidateDisplayList();
+					image2.addEventListener(Event.COMPLETE,image2_completeHandler);
+					image2.source=source;
+					trace("filling image 2"+image2.source);
+				}
+			}
+			
+
+			
+			public function showNewVideo(source:String):void {
+				if(temporizza) {
+					temporizza.stop();
+				}
+
+				showCustomerVideo(source);
+			}
+			private function showCustomerVideo(source:String) {
+				customerVideoComplete=false;
+				customerVideo.source=source;
+				customerVideo.play();
+				//strip.visible=true;
+				//strip.source="assets/images/overlay.png";
+				TweenMax.to(customerVideo,1,{volume:1});
+				TweenMax.to(customerVideoGroup,1,{alpha:1});
+			}
+			private function hideCustomerVideo() {
+				
+			}
+			
+
+			protected function image1_completeHandler(event:Event):void
+			{
+				//temporizza.reset();
+				//temporizza.start();
+				trace("image 1 complete handler");
+				image1.removeEventListener(Event.COMPLETE,image1_completeHandler);
+
+					trace("new image 1");
+					
+					TweenMax.to(image1,1,{alpha:1,onComplete:tween1Complete});
+					TweenMax.to(image2,1,{alpha:0,onComplete:tween2Complete});
+					
+					//image1.visible=true;
+					//image2.visible=false;
+					faseStatus="one";
+					//temporizza.start();
+				
+			}
+
+			protected function image2_completeHandler(event:Event):void
+			{
+				//temporizza.reset();
+				//temporizza.start();
+				image2.removeEventListener(Event.COMPLETE,image2_completeHandler);
+				trace("image 2 complete handler");
+
+				trace("new image 2");
+				TweenMax.to(image1,1,{alpha:0,onComplete:tween1Complete});
+				TweenMax.to(image2,1,{alpha:1,onComplete:tween2Complete});
+				faseStatus="two";
+
+				//temporizza.start();
+				
+			}
+			function tween1Complete():void {
+				trace("tween 1 complete");
+				image1.visible=true;
+			}
+			function tween2Complete():void {
+				trace("tween 2 complete");
+				image2.visible=true;
+			}
+			protected function image1_readyHandler(event:FlexEvent):void
+			{
+				trace("image 1 ready handler");
+				
+				
+			}
+			
+			protected function image2_readyHandler(event:FlexEvent):void
+			{
+				trace("image 2 complete handler");
+				
+			}
+			
+			protected function window1_creationCompleteHandler(event:FlexEvent):void
+			{
+				TweenPlugin.activate([AutoAlphaPlugin]);
+				
+			}
+			
+			protected function promovideo_completeHandler(event:TimeEvent):void
+			{
+				trace("promo video complete");
+				
+			}
+			
+			protected function promovideo_mediaPlayerStateChangeHandler(event:MediaPlayerStateChangeEvent):void
+			{
+				trace("promoVideo state:"+event.state);
+				
+				
+			}
+
+			
+			public static function traceDisplayList(displayObject:DisplayObject, instanceOnly:Boolean = false, withData:Boolean = true, withParent:Boolean = false, maxDepth:int = 100, skipClass:Class = null, levelSpace:String = " ", currentDepth:int = 0, parent:String = ""):void 
+			{
+				if (skipClass != null) { if (displayObject is skipClass) { return; } }
+				
+				var displayName:String = displayObjectCleanName(displayObject);
+				displayName += (displayName != "") ? " " : "";
+				if (instanceOnly && displayName == "") { return; }
+				
+				var className:String = getCleanClassName(displayObject);
+				
+				if(className=="Video") {
+					trace("video found!");
+					var vid:flash.media.Video = displayObject as flash.media.Video;
+					vid.smoothing=true;
+				}
+				
+				
+				var text:String = (className == "TextField") ? String(" \"" + TextField(displayObject).text) + "\"" : ""
+				
+				var objectName:String = displayName + className + text;
+				
+				var dataString:String = (withData) ? String(" [x:" + displayObject.x + " y:" + displayObject.y + " width:" + displayObject.width + " height:" + displayObject.height + "]") : "";
+				
+				var parentName:String = (withParent && parent != "") ? String(" (" +  parent + ")") : "";   
+				
+				var levelStr:String = (withParent) ? String(currentDepth + " ") : "";
+				
+				if (displayObject is DisplayObjectContainer && currentDepth < maxDepth)
+				{       
+					for (var i:int = 0; i < DisplayObjectContainer(displayObject).numChildren; i++)
+					{
+						traceDisplayList(DisplayObjectContainer(displayObject).getChildAt(i), instanceOnly, withData, withParent, maxDepth, skipClass, levelSpace + "    ", currentDepth + 1, objectName);
+					}
+				}
+			}   
+			
+			public static function getCleanClassName(obj:*):String 
+			{
+				var className:String = String(getQualifiedClassName(obj));
+				var indexOfString:int = className.lastIndexOf("::");
+				className = (indexOfString < 0) ? className : className.slice(indexOfString + 2);
+				return className;           
+			}
+			
+			public static function displayObjectCleanName(displayObject:DisplayObject):String
+			{
+				return String((displayObject.name.substr(0, 8) == "instance") ? "" : displayObject.name);
+			}
+			
+			protected function customerVideo_mediaPlayerStateChangeHandler(event:MediaPlayerStateChangeEvent):void
+			{
+				trace("customer video state:"+event.state);
+				
+			}
+			
+			protected function customerVideo_completeHandler(event:TimeEvent):void
+			{
+				if(!customerVideoComplete) {
+					customerVideoComplete=true;
+					customerVideo.stop();
+					
+				}
+				TweenMax.to(customerVideo,1,{volume:0});
+				TweenMax.to(customerVideoGroup,1,{alpha:0});
+				
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:Fade id="image1In" alphaFrom="0" alphaTo="1" duration="1000" target="{image1}"  />
+		<s:Fade id="image1Out" alphaFrom="1" alphaTo="0" duration="1000" target="{image1}" />
+		<s:Fade id="image2In" alphaFrom="0" alphaTo="1" duration="1000" target="{image2}" />
+		<s:Fade id="image2Out" alphaFrom="1" alphaTo="1" duration="1000" target="{image2}" />
+		
+		
+	</fx:Declarations>
+	<!--s:states>
+	<s:State name="video"  />
+	<s:State name="photo"/>
+	</s:states-->
+	
+	<!--s:transitions>
+	
+	<s:Transition toState="photo" >
+	<s:Parallel>
+	
+	<s:Fade targets="{[realTimeImg]}" duration="1000" alphaFrom="0" alphaTo="1"/>
+	
+	</s:Parallel>
+	
+	</s:Transition>
+	<s:Transition toState="video" >
+	<s:Parallel>
+	
+	<s:Fade targets="{[realTimeImg]}" duration="1000" alphaFrom="1" alphaTo="0"/>
+	</s:Parallel>
+	
+	</s:Transition>
+	
+	</s:transitions-->
+	
+	<s:BorderContainer width="100%" height="100%" id="bigcontainer"  borderVisible="false">
+		<s:backgroundFill>
+			<s:SolidColor color="0xffffff">
+				
+			</s:SolidColor>
+		</s:backgroundFill>
+				
+	<s:Image id="image1" alpha="0" width="100%" smoothingQuality="high" height="100%" smooth="true" scaleMode="zoom" ready="image1_readyHandler(event)"  />
+	<s:Image id="image2" alpha="0" width="100%" height="100%" smooth="true"  scaleMode="zoom" ready="image2_readyHandler(event)"  />
+				
+
+		
+	</s:BorderContainer>
+	<s:Group id="customerVideoGroup" alpha="0"  width="100%" height="100%">
+		
+
+	<s:VideoDisplay creationComplete="{traceDisplayList(customerVideo)}" id="customerVideo" mediaPlayerStateChange="customerVideo_mediaPlayerStateChangeHandler(event)" scaleMode="zoom" loop="false" autoPlay="true" complete="customerVideo_completeHandler(event)" width="100%" height="100%" />
+
+	</s:Group>
+	<s:VGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="bottom">
+		<s:BitmapImage id="strip" source="assets/images/overlay.png"  />
+	</s:VGroup>
+	
+</s:Window>
